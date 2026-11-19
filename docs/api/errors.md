@@ -1,3 +1,7 @@
+---
+order: 4
+---
+
 # Errors, Denials and Failure Modes
 
 This is a **behavioral reference** from previously observed route and provider implementations, not a complete exhaustive error enum for current HEAD.

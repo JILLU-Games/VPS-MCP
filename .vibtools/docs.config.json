@@ -1,0 +1,15 @@
+{
+  "$schema": "https://docs.vib.tools/schemas/vibtools-docs.schema.json",
+  "schemaVersion": 1,
+  "docsType": "developer",
+  "slug": "vps-mcp",
+  "title": "VPS-MCP",
+  "category": "Core Infrastructure",
+  "description": "Permission-scoped self-hosted MCP server with a private administrator console and Cloudflare DNS integration.",
+  "version": "0.4.0",
+  "accentColor": "#2563EB",
+  "docsPath": "docs",
+  "branch": "main",
+  "ctaLabel": "View repository",
+  "ctaUrl": "https://github.com/vibtoolshq/VPS-MCP"
+}

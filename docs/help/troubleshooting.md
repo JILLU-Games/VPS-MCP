@@ -1,3 +1,7 @@
+---
+order: 1
+---
+
 # Developer Troubleshooting
 
 | Symptom | Likely layer | Safe action |

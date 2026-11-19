@@ -1,3 +1,7 @@
+---
+order: 5
+---
+
 # Build, CI and Release Readiness
 
 ## Verified elements from prior project history

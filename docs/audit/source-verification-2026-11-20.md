@@ -1,3 +1,7 @@
+---
+order: 2
+---
+
 # Source Verification — GitHub `main` (2026-11-20)
 
 **Read directly from:** [VPS-MCP repository](https://github.com/vibtoolshq/VPS-MCP/tree/5c19d0a9fff8d63bd55a4447c891f2b26374c32b); source commit `5c19d0a9fff8d63bd55a4447c891f2b26374c32b`. Linked GitHub account has verified repository push permission.

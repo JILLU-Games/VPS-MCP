@@ -1,3 +1,7 @@
+---
+order: 3
+---
+
 # Developer Documentation Coverage and QA
 
 **Revision inspected:** `5c19d0a9fff8d63bd55a4447c891f2b26374c32b` (`main` as returned by the linked GitHub connector on 2026-11-20). **Documentation QA date:** 2026-11-20.
@@ -31,7 +35,7 @@ Authenticated GitHub repository access was restored using the linked **Primary**
 - **Admin/OAuth/MCP HTTP routes:** enumerated from `src/server/http.ts` (see [HTTP API](../api/http.md)).
 - **Package distribution:** `private: true`, Node `>=22`; no supported package export map.
 - **Existing legacy `docs/` files preserved:** 17.
-- **Suite Markdown files:** see [Manifest](../MANIFEST.md).
+- **Documentation inventory and navigation:** see [Developer Documentation](../index.md) and [Audit & Verification](index.md).
 - **App source, tests, package metadata and CI changes in this documentation publication:** none.
 
 ## Structural QA

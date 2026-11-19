@@ -1,3 +1,7 @@
+---
+order: 2
+---
+
 # Tool Permissions, Client Restrictions and Approvals
 
 ## Effective permission model

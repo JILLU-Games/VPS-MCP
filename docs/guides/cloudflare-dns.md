@@ -1,3 +1,7 @@
+---
+order: 3
+---
+
 # Cloudflare DNS Provider Integration
 
 ## Intended integration

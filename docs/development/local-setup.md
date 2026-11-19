@@ -1,3 +1,7 @@
+---
+order: 1
+---
+
 # Local Development Setup
 
 These are **previously recorded commands**, not freshly executed in this documentation pass:

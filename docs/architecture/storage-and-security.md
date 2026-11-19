@@ -1,3 +1,7 @@
+---
+order: 4
+---
+
 # Storage, Isolation and Security Boundaries
 
 ## Private state observed

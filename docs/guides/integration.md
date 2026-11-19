@@ -1,3 +1,7 @@
+---
+order: 1
+---
+
 # Remote MCP Integration and OAuth
 
 ## Two transports, two trust domains

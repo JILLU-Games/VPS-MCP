@@ -1,3 +1,7 @@
+---
+order: 1
+---
+
 # Architecture Overview
 
 The observed project is a **single Node.js/TypeScript server** with three adjacent concerns: MCP service, administrator website/API, and an opt-in restricted privileged broker code path. Docker Compose provides a private default deployment; a separate broker is not enabled by the default stack.

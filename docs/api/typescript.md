@@ -1,3 +1,7 @@
+---
+order: 3
+---
+
 # TypeScript Module and Class Reference — Internal / Non-Stable
 
 **Important:** These are *source-level* symbols, **not public npm package exports**. At `5c19d0a9fff8d63bd55a4447c891f2b26374c32b`, `package.json` has `"private": true` and no `exports`, `main`, or `types` fields. Do not publish or depend on these imports as a stable SDK. Selected signatures below were rechecked against the source on 2026-11-20.

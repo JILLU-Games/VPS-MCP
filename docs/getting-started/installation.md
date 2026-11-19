@@ -1,3 +1,7 @@
+---
+order: 2
+---
+
 # Installation — Private Docker Profile
 
 The following workflow is documented in the previously reviewed installer and Compose configuration. **It has not been executed during this documentation-only run.**

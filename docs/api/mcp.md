@@ -1,3 +1,7 @@
+---
+order: 2
+---
+
 # MCP Tool Surface
 
 The observed server used **Streamable HTTP** at `/mcp` with OAuth. Tools are advertised based on the current allowed tool set, global/per-client policy and granted scopes. A tool can exist in the implementation but be unavailable to an individual client.

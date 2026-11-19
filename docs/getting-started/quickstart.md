@@ -1,3 +1,7 @@
+---
+order: 3
+---
+
 # Developer Quickstart
 
 This is the smallest previously documented development path; a fresh invocation is **not claimed to have been tested here**.

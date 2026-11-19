@@ -1,3 +1,7 @@
+---
+order: 1
+---
+
 # Configuration Reference — Previously Inspected Schema
 
 Primary source examined in the preceding session: `src/shared/config.ts` (`loadConfig` with Zod). **Defaults and validation below were rechecked against the current `src/shared/config.ts` at `5c19d0a9fff8d63bd55a4447c891f2b26374c32b`.** The private installer normally generates `.env`; do not confuse application-schema defaults with complete production deployment configuration.

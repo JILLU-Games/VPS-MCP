@@ -1,3 +1,7 @@
+---
+order: 4
+---
+
 # Contributing and Maintenance
 
 VPS-MCP was operated as a GitHub-hosted project with a tracked lockfile, test workflow and source-specific feature documentation in previous sessions. **A formal CONTRIBUTING policy, code owner list, required PR status rules and open-source redistribution license were not re-inspected.** Do not invent a governance policy.

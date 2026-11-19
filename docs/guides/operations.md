@@ -1,3 +1,7 @@
+---
+order: 4
+---
+
 # Private Compose Operations and Data Recovery
 
 The previously reviewed deployment shipped these shell scripts under `scripts/`:

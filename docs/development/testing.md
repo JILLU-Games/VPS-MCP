@@ -1,3 +1,7 @@
+---
+order: 2
+---
+
 # Testing and Verification
 
 ## Package scripts verified against current `package.json`

@@ -1,3 +1,7 @@
+---
+order: 2
+---
+
 # Codebase and Module Responsibilities
 
 > Source tree of **22 TypeScript modules** re-inventoried on 2026-11-20 at `5c19d0a9fff8d63bd55a4447c891f2b26374c32b`. Entries below group related modules; see the full [source verification and inventory](../audit/source-verification-2026-11-20.md).

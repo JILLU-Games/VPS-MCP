@@ -1,3 +1,7 @@
+---
+order: 1
+---
+
 # HTTP API — Observed Route Reference
 
 Route names were rechecked on 2026-11-20 against `src/server/http.ts` at `5c19d0a9fff8d63bd55a4447c891f2b26374c32b`. Authentication and request examples derive from that implementation and earlier tests; not every route payload was exhaustively revalidated. These private admin routes are **not** a supported public SDK and have no backward-compatibility guarantee.

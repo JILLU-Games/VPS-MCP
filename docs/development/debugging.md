@@ -1,3 +1,7 @@
+---
+order: 3
+---
+
 # Debugging and Observability
 
 ## First checks

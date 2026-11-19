@@ -1,3 +1,11 @@
+---
+title: "VPS-MCP Developer Documentation"
+description: "Engineering reference for the VPS-MCP TypeScript server, MCP tools, OAuth, security controls, Cloudflare DNS, tests, and private Docker deployment."
+version: "0.4.0"
+order: 0
+draft: false
+---
+
 # VPS-MCP Developer Documentation
 
 **Node.js/TypeScript MCP server · private administration API · OAuth · Docker Compose · Cloudflare DNS integration**
@@ -32,4 +40,6 @@ A Cloudflare DNS administration form is **not equivalent to an MCP DNS tool**: t
 
 The default Compose configuration uses loopback-host access and read-only MCP tools. Public HTTPS, remote ChatGPT OAuth, automatic SSL issuance, and privileged VPS operations require separate engineering and validation.
 
-See the [Documentation manifest](MANIFEST.md), [fresh source verification](audit/source-verification-2026-11-20.md), and [remaining coverage limits](audit/coverage-and-validation.md) before treating this as a release artifact.
+Review the [source-verification report](audit/source-verification-2026-11-20.md), [coverage limitations](audit/coverage-and-validation.md), and [Vib Docs Engine configuration checklist](audit/vib-docs-engine-checklist.md) before relying on this material as a production release reference.
+
+> **Publishing note:** Repository governance file `MANIFEST.md` is intentionally excluded from the public documentation portal by Vib Docs Engine.

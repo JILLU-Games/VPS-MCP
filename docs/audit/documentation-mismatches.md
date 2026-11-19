@@ -1,3 +1,7 @@
+---
+order: 4
+---
+
 # Documentation Consistency and Known Misreadings
 
 On 2026-11-20, the live GitHub tree at `5c19d0a9fff8d63bd55a4447c891f2b26374c32b` was inspected, including the list of existing `docs/*.md` paths. This documentation suite adds new nested pages without replacing existing legacy guides. The table below captures important distinctions verified from current source; a complete line-by-line reconciliation of each legacy doc remains out of scope.
