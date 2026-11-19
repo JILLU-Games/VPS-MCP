@@ -11,5 +11,6 @@
   "docsPath": "docs",
   "branch": "main",
   "ctaLabel": "View repository",
-  "ctaUrl": "https://github.com/vibtoolshq/VPS-MCP"
+  "ctaUrl": "https://github.com/vibtoolshq/VPS-MCP",
+  "logoPath": ".vibtools/logo.png"
 }

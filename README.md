@@ -1,5 +1,7 @@
 # VPS-MCP
 
+<p align="center"><img src=".vibtools/logo.png" alt="VPS-MCP — secure server management icon" width="156" /></p>
+
 **A simple, secure web control panel for your VPS, with MCP support for AI tools.**
 
 VPS-MCP runs inside Docker. It gives you a small dashboard to see system information, manage MCP permissions, review connected clients and prepare domain/network settings.
