@@ -78,7 +78,10 @@ export class SessionManager {
   }
   get(req: IncomingMessage): Session | null {
     const cookie = (req.headers.cookie || '').split(';').map(v=>v.trim()).find(v=>v.startsWith(this.cookieName+'='));
-    const id = cookie?.slice(this.cookieName.length+1);
+    const headerToken = (this.config.authMode === 'demo' && process.env.NODE_ENV !== 'production')
+      ? (req.headers['x-session-token'] as string | undefined)
+      : undefined;
+    const id = cookie?.slice(this.cookieName.length+1) || headerToken;
     if (!id) return null;
     const session = this.sessions.get(id);
     if (!session) return null;
@@ -86,13 +89,29 @@ export class SessionManager {
     return session;
   }
   csrfForId(id: string): string { return this.sessions.get(id)?.csrf || ''; }
-  setCookie(res: ServerResponse, id: string) {
-    res.setHeader('Set-Cookie', `${this.cookieName}=${id}; Path=/; HttpOnly; SameSite=Strict; ${this.config.secureCookies ? 'Secure; ' : ''}Max-Age=28800`);
+  private cookieAttributes(req?: IncomingMessage): string {
+    const proto = (req?.headers['x-forwarded-proto'] as string | undefined) || '';
+    const origin = req?.headers.origin || '';
+    const isHttpsIframePreview = this.config.MCP_PRIVATE_CONTAINER === 'true' && Boolean(req) && (
+      proto === 'https' ||
+      /^https:\/\/[a-z0-9.-]+\.run\.app(?::\d+)?$/i.test(origin)
+    );
+    if (isHttpsIframePreview) {
+      return 'Path=/; HttpOnly; SameSite=None; Secure; Partitioned';
+    }
+    return `Path=/; HttpOnly; SameSite=Strict${this.config.secureCookies ? '; Secure' : ''}`;
+  }
+  setCookie(res: ServerResponse, id: string, req?: IncomingMessage) {
+    res.setHeader('Set-Cookie', `${this.cookieName}=${id}; ${this.cookieAttributes(req)}; Max-Age=28800`);
   }
   logout(req: IncomingMessage, res: ServerResponse) {
     const cookie = (req.headers.cookie || '').split(';').map(v=>v.trim()).find(v=>v.startsWith(this.cookieName+'='));
+    const headerToken = (this.config.authMode === 'demo' && process.env.NODE_ENV !== 'production')
+      ? (req.headers['x-session-token'] as string | undefined)
+      : undefined;
     if(cookie) this.sessions.delete(cookie.slice(this.cookieName.length+1));
-    res.setHeader('Set-Cookie',`${this.cookieName}=; Path=/; HttpOnly; SameSite=Strict; ${this.config.secureCookies ? 'Secure; ' : ''}Max-Age=0`);
+    if(headerToken) this.sessions.delete(headerToken);
+    res.setHeader('Set-Cookie',`${this.cookieName}=; ${this.cookieAttributes(req)}; Max-Age=0`);
   }
   verifyCsrf(session: Session, value: string | undefined) {return !!value && safeEqual(session.csrf, value);}
 }

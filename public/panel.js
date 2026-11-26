@@ -16,6 +16,11 @@ function feedback(message='',kind='error',target='notice'){
 function showLogin(message='',focus=false){
   state.signedIn=false;state.csrf='';state.networkEditing=false;state.networkResolvedDomain='';
   $('dashboard').hidden=true;$('setup-view').hidden=true;$('logout').hidden=true;$('login-view').hidden=false;
+  if(state.authMode==='demo'){
+    if(!$('username').value)$('username').value=state.demoUsername||'admin';
+    if(!$('password').value)$('password').value=state.demoPassword||'AdminControl#2026';
+    if(!message)feedback('Demo mode active','success','login-message');
+  }
   if(message)feedback(message,'error','login-message');
   if(focus)$('username').focus();
 }
@@ -33,15 +38,19 @@ function humanError(error){
   return 'The request failed. Refresh the panel and try again.';
 }
 async function api(url,options={}){
+  const headers={...(options.headers||{})};
+  if(state.sessionToken && !headers['x-session-token']){
+    headers['x-session-token']=state.sessionToken;
+  }
   let response;
-  try {response=await fetch(url,{credentials:'same-origin',cache:'no-store',...options});}
+  try {response=await fetch(url,{credentials:'same-origin',cache:'no-store',...options,headers});}
   catch {throw {network:true};}
   const data=await response.json().catch(()=>({}));
   if(!response.ok){
     if(response.status===401 && !['/api/login','/api/session'].includes(url)){
       showLogin('Session expired. Sign in again.',true);
     }
-    throw {status:response.status,code:data.error};
+    throw {status:response.status,code:data.error,message:data.message};
   }
   return data;
 }
@@ -259,6 +268,75 @@ function switchPage(key){
   put('current-section',PAGES[key]);
   feedback('');
 }
+function renderManualDomains(domains){
+  const list=asArray(domains);
+  state.manualDomains=list;
+  put('manual-domain-count',list.length+' domain'+(list.length===1?'':'s'));
+  const tbody=$('manual-domain-rows');
+  tbody.replaceChildren();
+  if(!list.length){
+    const tr=document.createElement('tr'),td=document.createElement('td');
+    td.colSpan=5;td.textContent='No domains added yet. Add a domain or subdomain above.';
+    tr.append(td);tbody.append(tr);
+    return;
+  }
+  for(const item of list){
+    const tr=document.createElement('tr');
+    const tdDomain=document.createElement('td');
+    const strong=document.createElement('strong');strong.textContent=item.domain;
+    tdDomain.append(strong);
+    if(asArray(item.resolvedIps).length){
+      const sub=document.createElement('div');sub.className='sub';
+      sub.textContent='IP: '+item.resolvedIps.join(', ');
+      tdDomain.append(sub);
+    }
+
+    const tdType=document.createElement('td');
+    const typeTag=document.createElement('span');typeTag.className='tag';
+    typeTag.textContent=item.type==='subdomain'?'Subdomain':'Root domain';
+    tdType.append(typeTag);
+
+    const tdDns=document.createElement('td');
+    const dnsBadge=document.createElement('span');
+    const dnsOk=item.dnsStatus==='verified';
+    const dnsFail=item.dnsStatus==='failed';
+    dnsBadge.className='badge '+(dnsOk?'ok':dnsFail?'bad':'warn');
+    dnsBadge.textContent=dnsOk?'● Verified':dnsFail?'● Unresolved':'● Pending DNS';
+    tdDns.append(dnsBadge);
+
+    const tdSsl=document.createElement('td');
+    const sslBadge=document.createElement('span');
+    const sslOk=item.sslStatus==='active';
+    const sslFail=item.sslStatus==='failed';
+    sslBadge.className='badge '+(sslOk?'ok':sslFail?'bad':'warn');
+    sslBadge.textContent=sslOk?'● SSL Connected':sslFail?'● SSL Blocked':'● Pending SSL';
+    tdSsl.append(sslBadge);
+    if(item.sslIssuer){
+      const issuer=document.createElement('div');issuer.className='sub';
+      issuer.textContent=item.sslIssuer;
+      tdSsl.append(issuer);
+    }
+
+    const tdActions=document.createElement('td');
+    const actions=document.createElement('div');actions.className='row';
+
+    const btnConfig=makeButton('Configure DNS','ghost small',()=>openDnsModal(item));
+    const btnCheck=makeButton('Check DNS','primary small',()=>checkManualDomain(item,false));
+    const btnEdit=makeButton('Edit','ghost small',()=>startEditManualDomain(item));
+    const btnRemove=makeButton('Remove','ghost danger small',()=>removeManualDomain(item));
+
+    actions.append(btnConfig,btnCheck,btnEdit,btnRemove);
+    tdActions.append(actions);
+    tr.append(tdDomain,tdType,tdDns,tdSsl,tdActions);
+    tbody.append(tr);
+  }
+  if(state.activeDnsModalId){
+    const current=list.find(d=>d.id===state.activeDnsModalId);
+    if(current)populateDnsModal(current);
+    else closeDnsModal();
+  }
+}
+
 function renderNetwork(network){
   const info=network?.applied || {};
   put('network-bind',info.hostBind || 'Not reported');
@@ -286,6 +364,7 @@ function renderNetwork(network){
     'Current private port and saved draft match. Domain/SSL plans are NOT deployed.');
   $('network-save').disabled=!network;
   $('network-copy-command').disabled=!network;
+  renderManualDomains(network?.domains);
 }
 
 function render(data){
@@ -339,7 +418,14 @@ function showSetup(){
 async function init(){
   try{
     const initial=await api('/api/setup/status');
+    state.authMode=initial.authMode||'production';
+    state.demoUsername=initial.demoUsername||'admin';
+    state.demoPassword=initial.demoPassword||'AdminControl#2026';
     if(initial.required){showSetup();return;}
+    if(state.authMode==='demo'){
+      if(!$('username').value)$('username').value=state.demoUsername;
+      if(!$('password').value)$('password').value=state.demoPassword;
+    }
     const session=await api('/api/session');
     if(typeof session.csrf!=='string'||!session.csrf)throw {status:401};
     state.csrf=session.csrf;showDashboard();
@@ -392,8 +478,9 @@ $('login-form').addEventListener('submit',async event=>{
   event.preventDefault();const button=$('login-button');button.disabled=true;
   feedback('Verifying credentials…','success','login-message');
   try{
-    await api('/api/login',{method:'POST',headers:{'content-type':'application/json'},
+    const loginResult=await api('/api/login',{method:'POST',headers:{'content-type':'application/json'},
       body:JSON.stringify({username:$('username').value.trim(),password:$('password').value})});
+    if(loginResult?.sessionToken)state.sessionToken=loginResult.sessionToken;
     $('password').value='';
     feedback('','success','login-message');
     await init();
@@ -405,6 +492,7 @@ $('logout').addEventListener('click',async()=>{
   const button=$('logout');button.disabled=true;
   try{
     await api('/api/logout',{method:'POST',headers:{'x-csrf-token':state.csrf}});
+    state.sessionToken='';
     showLogin('Signed out successfully.',true);
     feedback('Signed out successfully.','success','login-message');
     history.replaceState(null,'','/');
@@ -674,3 +762,130 @@ $('dns-record-form').addEventListener('submit',async event=>{
  }catch(error){feedback(dnsError(error),'error','dns-record-feedback');}
  finally{state.activeAction=false;$('dns-record-save').disabled=false;}
 });
+
+const copyDnsText=async(text,label)=>{
+  try{
+    if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(text);
+    feedback('Copied '+label+': '+text,'success','dns-modal-status');
+  }catch{
+    feedback('Copy failed for '+label,'error','dns-modal-status');
+  }
+};
+const clearManualDomainForm=()=>{
+  state.manualDomainEditId=null;
+  $('manual-domain-input').value='';
+  $('manual-domain-submit').textContent='Add domain';
+  $('manual-domain-cancel').hidden=true;
+};
+const startEditManualDomain=item=>{
+  state.manualDomainEditId=item.id;
+  $('manual-domain-input').value=item.domain||'';
+  $('manual-domain-submit').textContent='Save domain';
+  $('manual-domain-cancel').hidden=false;
+  $('manual-domain-input').focus();
+};
+const removeManualDomain=async item=>{
+  if(!state.signedIn||state.activeAction)return;
+  state.activeAction=true;
+  try{
+    const res=await api('/api/network/domains',{method:'POST',
+      headers:{'content-type':'application/json','x-csrf-token':state.csrf},
+      body:JSON.stringify({action:'remove',id:item.id})});
+    if(state.manualDomainEditId===item.id)clearManualDomainForm();
+    if(state.activeDnsModalId===item.id)closeDnsModal();
+    if(res?.network)renderNetwork(res.network);
+    feedback('Removed '+item.domain+'.','success','manual-domain-feedback');
+  }catch(error){feedback('Domain action failed: '+(error?.message||humanError(error)),'error','manual-domain-feedback');}
+  finally{state.activeAction=false;}
+};
+const checkManualDomain=async(item,fromModal=false)=>{
+  if(!state.signedIn||state.activeAction)return;
+  state.activeAction=true;
+  if(fromModal)$('dns-modal-check').disabled=true;
+  try{
+    const res=await api('/api/network/domains',{method:'POST',
+      headers:{'content-type':'application/json','x-csrf-token':state.csrf},
+      body:JSON.stringify({action:'check',id:item.id})});
+    if(res?.network)renderNetwork(res.network);
+    if(res?.domain){
+      const d=res.domain;
+      const ips=asArray(d.resolvedIps);
+      const dnsDetail=ips.length?ips.join(', '):d.dnsStatus;
+      const sslDetail=d.sslIssuer||d.sslStatus;
+      const msg=d.domain+': DNS '+d.dnsStatus+' ('+dnsDetail+') | SSL '+d.sslStatus+' ('+sslDetail+')';
+      feedback(msg,d.dnsStatus==='verified'?'success':'error',fromModal?'dns-modal-status':'manual-domain-feedback');
+      if(state.activeDnsModalId===d.id)populateDnsModal(d);
+    }
+  }catch(error){
+    feedback('Check DNS failed: '+(error?.message||humanError(error)),'error',fromModal?'dns-modal-status':'manual-domain-feedback');
+  }finally{
+    state.activeAction=false;
+    if(fromModal)$('dns-modal-check').disabled=false;
+  }
+};
+const populateDnsModal=item=>{
+  state.activeDnsModalId=item.id;
+  put('dns-modal-title','Configure DNS - '+item.domain);
+  put('dns-modal-domain',item.domain+' ('+(item.type==='subdomain'?'Subdomain':'Root domain')+')');
+  const tbody=$('dns-modal-rows');tbody.replaceChildren();
+  const records=asArray(item.dnsConfig?.records||item.dnsRecords);
+  for(const rec of records){
+    const tr=document.createElement('tr');
+    const c1=document.createElement('td');
+    const typeBadge=document.createElement('span');typeBadge.className='badge ok';typeBadge.textContent=rec.type;
+    c1.appendChild(typeBadge);
+    const c2=document.createElement('td');
+    const nameCode=document.createElement('span');nameCode.className='modal-code';nameCode.textContent=rec.name;
+    c2.appendChild(nameCode);
+    const c3=document.createElement('td');
+    const valCode=document.createElement('span');valCode.className='modal-code';valCode.textContent=rec.value;
+    c3.appendChild(valCode);
+    const c4=document.createElement('td');c4.textContent=rec.ttl||'Auto';
+    const c5=document.createElement('td');
+    const copyWrap=document.createElement('div');copyWrap.className='row';
+    const copyHost=makeButton('Copy Host','ghost small',()=>copyDnsText(rec.name,rec.type+' Host'));
+    const copyVal=makeButton('Copy Value','ghost small',()=>copyDnsText(rec.value,rec.type+' Value'));
+    copyWrap.append(copyHost,copyVal);
+    c5.appendChild(copyWrap);
+    tr.append(c1,c2,c3,c4,c5);
+    tbody.appendChild(tr);
+  }
+  const ips=asArray(item.resolvedIps);
+  put('dns-modal-status','DNS: '+(item.dnsStatus||'pending')+(ips.length?' ('+ips.join(', ')+')':'')+' | SSL: '+(item.sslStatus||'pending')+(item.sslIssuer?' ('+item.sslIssuer+')':''));
+};
+const openDnsModal=item=>{
+  populateDnsModal(item);
+  $('dns-config-modal').hidden=false;
+};
+const closeDnsModal=()=>{
+  state.activeDnsModalId=null;
+  $('dns-config-modal').hidden=true;
+};
+$('manual-domain-cancel').addEventListener('click',clearManualDomainForm);
+$('dns-modal-close').addEventListener('click',closeDnsModal);
+$('dns-modal-check').addEventListener('click',()=>{
+  if(!state.activeDnsModalId)return;
+  const item=asArray(state.manualDomains).find(d=>d.id===state.activeDnsModalId);
+  if(item)void checkManualDomain(item,true);
+});
+$('manual-domain-form').addEventListener('submit',async event=>{
+  event.preventDefault();
+  if(!state.signedIn||state.activeAction)return;
+  const domain=$('manual-domain-input').value.trim();
+  if(!domain){feedback('Enter a domain or subdomain.','error','manual-domain-feedback');return;}
+  state.activeAction=true;$('manual-domain-submit').disabled=true;
+  try{
+    const isEdit=!!state.manualDomainEditId;
+    const res=await api('/api/network/domains',{method:'POST',
+      headers:{'content-type':'application/json','x-csrf-token':state.csrf},
+      body:JSON.stringify(isEdit?{action:'update',id:state.manualDomainEditId,domain}:{action:'add',domain})});
+    clearManualDomainForm();
+    if(res?.network)renderNetwork(res.network);
+    feedback((isEdit?'Updated ':'Added ')+(res?.domain?.domain||domain)+'. Click Configure DNS or Check DNS.','success','manual-domain-feedback');
+  }catch(error){
+    feedback('Domain save failed: '+(error?.message||humanError(error)),'error','manual-domain-feedback');
+  }finally{
+    state.activeAction=false;$('manual-domain-submit').disabled=false;
+  }
+});
+

@@ -21,6 +21,7 @@ if docker volume inspect "$volume_name" >/dev/null 2>&1; then
 fi
 setup_token="$(openssl rand -hex 32)"
 setup_hash="$(printf '%s' "$setup_token" | openssl dgst -sha256 -r | awk '{print $1}')"
+broker_secret="$(openssl rand -hex 32)"
 cat > .env <<EOF
 # Auto-generated. No manual .env editing is required.
 MCP_HOST=0.0.0.0
@@ -38,6 +39,8 @@ MCP_STATE_FILE=/data/oauth-state.json
 MCP_CONTROL_FILE=/data/control.json
 MCP_POLICY_FILE=/data/policy.json
 MCP_AUDIT_FILE=/data/audit.jsonl
+MCP_BROKER_SOCKET=/run/vps-mcp/broker.sock
+MCP_BROKER_SECRET=$broker_secret
 MCP_ALLOWED_TOOLS=system_status,disk_usage
 MCP_ENABLE_WRITES=false
 MCP_ALLOW_GIT_SYNC=false

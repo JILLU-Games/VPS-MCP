@@ -14,7 +14,7 @@ import { OAuthService, OAuthError } from '../security/oauth.js';
 import { canRead, type AccessIdentity } from '../security/authorization.js';
 import { ApprovalQueue } from '../security/approvals.js';
 import { PolicyStore } from '../security/policy.js';
-import { NetworkSettings } from '../security/network.js';
+import { NetworkSettings, NetworkStorageError } from '../security/network.js';
 import { CloudflareDns,DnsError } from '../security/cloudflare-dns.js';
 import { AdminSetup } from '../security/admin-setup.js';
 import { AuditLog } from '../security/audit.js';
@@ -25,12 +25,16 @@ const MAX_BODY = 16 * 1024;
 const MIME: Record<string,string> = {
   '/':'text/html; charset=utf-8',
   '/assets/panel.css':'text/css; charset=utf-8',
-  '/assets/panel.js':'text/javascript; charset=utf-8'
+  '/assets/panel.js':'text/javascript; charset=utf-8',
+  '/assets/logo.png':'image/png',
+  '/favicon.ico':'image/png'
 };
 const STATIC: Record<string,string> = {
   '/':'public/panel.html',
   '/assets/panel.css':'public/panel.css',
-  '/assets/panel.js':'public/panel.js'
+  '/assets/panel.js':'public/panel.js',
+  '/assets/logo.png':'public/logo.png',
+  '/favicon.ico':'public/logo.png'
 };
 const escape = (input:string) => input.replace(/[&<>"']/g,v=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[v]||v));
 
@@ -70,7 +74,7 @@ function csrf(req:IncomingMessage,res:ServerResponse,sessions:SessionManager,ses
   return true;
 }
 function consentHtml(name:string,id:string,csrfToken:string,writes:boolean){
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Authorize VPS-MCP</title><link rel="stylesheet" href="/assets/panel.css"></head><body><div class="shell"><header class="topbar"><div class="brand"><span class="brand-icon">V</span>VPS/MCP</div><span class="tag">OAuth authorization</span></header><main><section class="login-card"><div class="eyebrow">AUTHORIZATION REQUEST</div><h1>Allow MCP access?</h1><p class="sub">The client <strong>${escape(name)}</strong> ${writes?'requests READ + WRITE permissions. An additional explicit one-time approval in the dashboard is required for each supported write action.':'requests read-only status and workspace information. No write permission is granted.'}</p><form action="/oauth/approve" method="post"><input type="hidden" name="id" value="${escape(id)}"><input type="hidden" name="csrf" value="${escape(csrfToken)}"><button type="submit" name="decision" value="allow" class="primary">Approve requested access</button><button type="submit" name="decision" value="deny" class="ghost">Deny</button></form><div class="footnote">Confirm only if you initiated this connection.</div></section></main></div></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Authorize VPS-MCP</title><link rel="icon" type="image/png" href="/assets/logo.png"><link rel="apple-touch-icon" href="/assets/logo.png"><link rel="stylesheet" href="/assets/panel.css"></head><body><div class="shell"><header class="topbar"><div class="brand"><img class="brand-logo" src="/assets/logo.png" alt="VPS/MCP logo">VPS/MCP</div><span class="tag">OAuth authorization</span></header><main><section class="login-card"><div class="eyebrow">AUTHORIZATION REQUEST</div><h1>Allow MCP access?</h1><p class="sub">The client <strong>${escape(name)}</strong> ${writes?'requests READ + WRITE permissions. An additional explicit one-time approval in the dashboard is required for each supported write action.':'requests read-only status and workspace information. No write permission is granted.'}</p><form action="/oauth/approve" method="post"><input type="hidden" name="id" value="${escape(id)}"><input type="hidden" name="csrf" value="${escape(csrfToken)}"><button type="submit" name="decision" value="allow" class="primary">Approve requested access</button><button type="submit" name="decision" value="deny" class="ghost">Deny</button></form><div class="footnote">Confirm only if you initiated this connection.</div></section></main></div></body></html>`;
 }
 export function createHttpServer(config:AppConfig = loadConfig(), dnsFetch:typeof fetch = fetch) {
   const oauth=new OAuthService(config);
@@ -102,22 +106,36 @@ export function createHttpServer(config:AppConfig = loadConfig(), dnsFetch:typeo
   const nodeHandler=toNodeHandler(handler);
 
   const route=async(req:IncomingMessage,res:ServerResponse) => {
+    const privateContainer=config.MCP_PRIVATE_CONTAINER==='true';
     res.setHeader('cache-control','no-store');
     res.setHeader('x-content-type-options','nosniff');
-    res.setHeader('x-frame-options','DENY');
+    if(!privateContainer) res.setHeader('x-frame-options','DENY');
     res.setHeader('referrer-policy','no-referrer');
-    res.setHeader('content-security-policy',"default-src 'none'; script-src 'self'; style-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+    res.setHeader('content-security-policy',`default-src 'none'; connect-src 'self'; img-src 'self' data:; script-src 'self'${privateContainer ? " 'unsafe-inline'" : ''}; style-src 'self'${privateContainer ? " 'unsafe-inline'" : ''}; base-uri 'none'; frame-ancestors ${privateContainer ? "'self' https://*.run.app https://*.google.com https://localhost.corp.google.com:26001" : "'none'"}; form-action 'self'`);
     if(config.secureCookies) res.setHeader('strict-transport-security','max-age=15552000');
     try {
       if((req.url||'').length>4096) return text(res,414,'URI too long');
       const host=req.headers.host||'';
+      const forwardedHost=(req.headers['x-forwarded-host'] as string|undefined)||'';
       const localHost='127.0.0.1:'+String(req.socket.localPort);
+      const localhostAlias='localhost:'+String(req.socket.localPort);
       const peer=req.socket.remoteAddress;
       const localPeer=peer==='127.0.0.1' || peer==='::1' || peer==='::ffff:127.0.0.1';
-      // Never trust forwarded headers; only accept the local host alias from loopback peers.
-      if(host!==new URL(config.origin).host && !(localPeer && host===localHost)) return text(res,403,'Invalid host');
+      const trustedContainerHost=privateContainer && (host===localHost || host===localhostAlias || /^[a-z0-9.-]+\.run\.app(?::\d+)?$/i.test(host));
+      const managedDomainHost=network.isAllowedHost(host);
+      // Never trust forwarded headers; only accept the local host alias from loopback peers or configured managed domains.
+      if(host!==new URL(config.origin).host && !(localPeer && host===localHost) && !trustedContainerHost && !managedDomainHost) return text(res,403,'Invalid host');
+      const trustedContainerOrigin=privateContainer && req.headers.origin && (
+        req.headers.origin===`http://${localHost}` ||
+        req.headers.origin===`http://${localhostAlias}` ||
+        req.headers.origin===`https://${host}` ||
+        req.headers.origin===`http://${host}` ||
+        (forwardedHost && (req.headers.origin===`https://${forwardedHost}` || req.headers.origin===`http://${forwardedHost}`)) ||
+        /^https:\/\/[a-z0-9.-]+\.run\.app(?::\d+)?$/i.test(req.headers.origin)
+      );
+      const managedDomainOrigin=Boolean(req.headers.origin && network.isAllowedOrigin(req.headers.origin));
       if(req.headers.origin && req.headers.origin!==config.origin &&
-        !(localPeer && req.headers.origin===`http://${localHost}`)) return text(res,403,'Invalid origin');
+        !(localPeer && req.headers.origin===`http://${localHost}`) && !trustedContainerOrigin && !managedDomainOrigin) return text(res,403,'Invalid origin');
 
       const url=new URL(req.url||'/',config.origin);
       const path=url.pathname;
@@ -135,7 +153,9 @@ export function createHttpServer(config:AppConfig = loadConfig(), dnsFetch:typeo
         res.writeHead(200,{'content-type':MIME[path] || 'application/octet-stream'});return res.end(content);
       }
       if(path==='/api/setup/status' && req.method==='GET')
-        return json(res,200,{required:setup.required,username:setup.required?'admin':undefined});
+        return json(res,200,config.authMode==='demo'
+          ?{required:setup.required,username:setup.required?'admin':undefined,authMode:'demo',demoUsername:config.ADMIN_USERNAME,demoPassword:'AdminControl#2026'}
+          :{required:setup.required,username:setup.required?'admin':undefined});
       if(path==='/api/setup' && req.method==='POST'){
         if(!setup.required)return json(res,409,{error:'already_initialized'});
         if(!rateAllowed(req,'admin.setup',5))return json(res,429,{error:'too_many_attempts'});
@@ -163,8 +183,10 @@ export function createHttpServer(config:AppConfig = loadConfig(), dnsFetch:typeo
         const sid=await sessions.login(username,password,ip);
         audit.record('login',sid?'success':'denied',sid?username:'anonymous');
         if(!sid) return json(res,401,{error:'login_failed'});
-        sessions.setCookie(res,sid);
-        return json(res,200,{ok:true,csrf:sessions.csrfForId(sid)});
+        sessions.setCookie(res,sid,req);
+        return json(res,200,config.authMode==='demo'
+          ?{ok:true,csrf:sessions.csrfForId(sid),sessionToken:sid}
+          :{ok:true,csrf:sessions.csrfForId(sid)});
       }
       // Session cookie is not readable from req until the next request.
       if(path==='/api/session' && req.method==='GET'){
@@ -256,6 +278,37 @@ export function createHttpServer(config:AppConfig = loadConfig(), dnsFetch:typeo
         // reported as failed because this second audit append fails.
         audit.record('panel.status','success',session.username,'network-plan-staged');
         return json(res,200,{ok:true,network:planned});
+      }
+      if(path==='/api/network/domains' && req.method==='POST'){
+        const session=authenticated(req,res,sessions);if(!session)return;
+        if(!csrf(req,res,sessions,session))return;
+        if(!rateAllowed(req,'network.domains',30))return json(res,429,{error:'rate_limited'});
+        const input=await body(req,'json') as Record<string,unknown>;
+        const action=String(input?.action||'');
+        if(!['add','update','remove','check'].includes(action))
+          return json(res,400,{error:'invalid_domain_action'});
+        try{
+          await audit.recordDurable('panel.status','success',session.username,'domain-'+action);
+        }catch{return json(res,503,{error:'audit_storage_unavailable'});}
+        try{
+          if(action==='add'){
+            const added=network.addDomain(input.domain);
+            return json(res,200,{ok:true,domain:added.domain,network:added.snapshot});
+          }
+          if(action==='update'){
+            const updated=network.updateDomain(input.id,input.domain);
+            return json(res,200,{ok:true,domain:updated.domain,network:updated.snapshot});
+          }
+          if(action==='remove'){
+            return json(res,200,{ok:true,network:network.removeDomain(input.id)});
+          }
+          const checked=await network.checkDomainDnsAndSsl(input.id);
+          return json(res,200,{ok:true,domain:checked.domain,network:checked.snapshot});
+        }catch(err){
+          if(err instanceof NetworkStorageError) return json(res,503,{error:'network_storage_unavailable'});
+          const msg=err instanceof Error?err.message:'invalid_domain_request';
+          return json(res,400,{error:'invalid_domain_request',message:msg});
+        }
       }
       if(path==='/api/mcp' && req.method==='POST'){
         const session=authenticated(req,res,sessions);if(!session)return;

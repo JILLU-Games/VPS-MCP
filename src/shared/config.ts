@@ -12,6 +12,7 @@ const schema = z.object({
   MCP_ADMIN_STATE_FILE: z.string().default('./data/admin.json'),
   MCP_PRIVATE_CONTAINER: z.enum(['true','false']).default('false'),
   MCP_BIND_PORT: z.coerce.number().int().min(1024).max(65535).default(3000),
+  MCP_PUBLIC_IP: z.string().default(''),
   MCP_NETWORK_DRAFT_FILE: z.string().default('./data/network-draft.json'),
   MCP_DNS_PROVIDER_FILE: z.string().default('./data/dns-provider.json'),
   OAUTH_ALLOWED_REDIRECT_URIS: z.string().default(''),
@@ -29,18 +30,26 @@ const schema = z.object({
   MCP_BROKER_SECRET: z.string().default(''),
   MCP_ENABLE_WRITES: z.enum(['true','false']).default('false'),
   MCP_ALLOW_GIT_SYNC: z.enum(['true','false']).default('false'),
-  MCP_LOG_LEVEL: z.enum(['debug','info','warn','error']).default('info')
+  MCP_LOG_LEVEL: z.enum(['debug','info','warn','error']).default('info'),
+  MCP_AUTH_MODE: z.enum(['demo','production']).optional()
 });
-export type AppConfig = Omit<z.infer<typeof schema>, 'MCP_ALLOW_GIT_SYNC'> & {
+export type AppConfig = Omit<z.infer<typeof schema>, 'MCP_ALLOW_GIT_SYNC' | 'MCP_AUTH_MODE'> & {
   origin: string;
   redirectUris: string[];
   allowedTools: string[];
   secureCookies: boolean;
   writesEnabled: boolean;
   MCP_ALLOW_GIT_SYNC: boolean;
+  MCP_AUTH_MODE: 'demo' | 'production';
+  authMode: 'demo' | 'production';
 };
 export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
   const parsed = schema.parse(source);
+  const isProdEnv = source.NODE_ENV === 'production';
+  if (isProdEnv && parsed.MCP_AUTH_MODE === 'demo') {
+    throw new Error('Demo auth mode is forbidden when NODE_ENV=production');
+  }
+  const authMode: 'demo' | 'production' = parsed.MCP_AUTH_MODE ?? (isProdEnv ? 'production' : 'production');
   const publicUrl = parsed.MCP_PUBLIC_URL;
   const tls = Boolean(parsed.MCP_TLS_CERT_FILE && parsed.MCP_TLS_KEY_FILE);
   if (Boolean(parsed.MCP_TLS_CERT_FILE) !== Boolean(parsed.MCP_TLS_KEY_FILE)) {
@@ -91,5 +100,5 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
   if (parsed.MCP_DEPLOY_REPO && !parsed.MCP_DEPLOY_REPO.startsWith('/')) throw new Error('Deploy repo must be absolute');
   if (parsed.MCP_DOCKER_CONTAINERS.split(',').filter(Boolean).some(v=>!/^[A-Za-z][\w.-]{0,63}$/.test(v.trim())))
     throw new Error('Invalid Docker allowlist');
-  return {...parsed, writesEnabled, MCP_ALLOW_GIT_SYNC:parsed.MCP_ALLOW_GIT_SYNC==='true', origin: parsedOrigin.origin, secureCookies: parsedOrigin.protocol === 'https:', redirectUris, allowedTools};
+  return {...parsed, MCP_AUTH_MODE: authMode, authMode, writesEnabled, MCP_ALLOW_GIT_SYNC:parsed.MCP_ALLOW_GIT_SYNC==='true', origin: parsedOrigin.origin, secureCookies: parsedOrigin.protocol === 'https:', redirectUris, allowedTools};
 }

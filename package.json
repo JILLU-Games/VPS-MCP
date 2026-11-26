@@ -5,13 +5,14 @@
   "description": "Permission-scoped VPS MCP with approval-gated broker operations",
   "type": "module",
   "scripts": {
-    "dev": "node --env-file-if-exists=.env --import tsx src/index.ts",
+    "dev": "NODE_ENV=development MCP_AUTH_MODE=demo node --env-file-if-exists=.env --import tsx src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node --env-file-if-exists=.env dist/index.js",
+    "start": "NODE_ENV=production MCP_AUTH_MODE=production node --env-file-if-exists=.env dist/index.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "tsc --noEmit -p tsconfig.json",
     "test": "tsx --test tests/*.test.ts",
     "check": "npm run typecheck && npm test && npm run build",
-    "broker": "node --env-file-if-exists=.env dist/broker/main.js"
+    "broker": "NODE_ENV=production node --env-file-if-exists=.env dist/broker/main.js"
   },
   "engines": {
     "node": ">=22"

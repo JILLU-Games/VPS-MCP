@@ -4,13 +4,41 @@ services:
     image: alpine:3.20
     user: "0:0"
     restart: "no"
-    command: ["sh", "-c", "chown 10001:10001 /data && chmod 0700 /data"]
+    command: ["sh", "-c", "rm -f /run/vps-mcp/broker.sock && chown 10001:10001 /data /run/vps-mcp && chmod 0700 /data /run/vps-mcp"]
     volumes:
       - mcp-data:/data
+      - mcp-socket:/run/vps-mcp
     cap_drop: [ALL]
-    cap_add: [CHOWN, FOWNER]
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
     security_opt:
       - no-new-privileges:true
+  broker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vps-mcp:local
+    command: ["node", "dist/broker/main.js"]
+    restart: unless-stopped
+    init: true
+    depends_on:
+      init-data:
+        condition: service_completed_successfully
+    user: "10001:10001"
+    env_file:
+      - .env
+    volumes:
+      - mcp-data:/data:rw
+      - mcp-socket:/run/vps-mcp:rw
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m,uid=10001,gid=10001,mode=0700
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 256m
+    cpus: 0.5
+    networks: [isolated]
   api:
     build:
       context: .
@@ -21,6 +49,8 @@ services:
     depends_on:
       init-data:
         condition: service_completed_successfully
+      broker:
+        condition: service_started
     user: "10001:10001"
     env_file:
       - .env
@@ -28,6 +58,7 @@ services:
       - "127.0.0.1:${MCP_BIND_PORT:-3000}:3000"
     volumes:
       - mcp-data:/data:rw
+      - mcp-socket:/run/vps-mcp:rw
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=16m,uid=10001,gid=10001,mode=0700
@@ -46,6 +77,8 @@ services:
       start_period: 20s
 volumes:
   mcp-data:
+  mcp-socket:
 networks:
   isolated:
     driver: bridge
+

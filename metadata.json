@@ -1,0 +1,5 @@
+{
+  "name": "VPS-MCP Control Panel",
+  "description": "Permission-scoped VPS MCP server and control console with approval-gated broker operations",
+  "requestFramePermissions": []
+}

@@ -1,150 +1,168 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>VPS MCP · Control Panel</title><link rel="stylesheet" href="/assets/panel.css"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>VPS-MCP Control Panel</title><meta name="description" content="Permission-scoped VPS MCP server and control console with approval-gated broker operations"><meta property="og:title" content="VPS-MCP Control Panel"><meta property="og:description" content="Permission-scoped VPS MCP server and control console with approval-gated broker operations"><meta property="og:image" content="/assets/logo.png"><link rel="icon" type="image/png" href="/assets/logo.png"><link rel="shortcut icon" type="image/png" href="/favicon.ico"><link rel="apple-touch-icon" href="/assets/logo.png"><link rel="stylesheet" href="/assets/panel.css"></head>
 <body><div class="shell">
 <a class="skip-link" href="#main-content">Skip to dashboard</a>
-<header class="topbar"><div class="brand"><span class="brand-icon">V</span><span>VPS<span class="muted">/</span>MCP</span></div><div class="topright"><span id="connection" class="pill">● Local service</span><button id="logout" class="ghost" type="button" hidden>Sign out</button></div></header>
+<header class="topbar"><div class="brand"><img class="brand-logo" src="/assets/logo.png" alt="VPS/MCP logo"><span>VPS<span class="muted">/</span>MCP</span></div><div class="topright"><span id="connection" class="pill">● Local</span><button id="logout" class="ghost" type="button" hidden>Sign out</button></div></header>
 <main id="main-content"><section id="setup-view" class="login-card" hidden>
-<div class="eyebrow">FIRST VISIT · REQUIRED SETUP</div><h1>Create your admin account</h1>
-<p class="sub">This server has no active default login. Use the one-time setup token printed by the VPS installer, then choose your own secure credentials.</p>
+<div class="auth-brand"><img class="auth-logo" src="/assets/logo.png" alt="VPS/MCP logo"><div><div class="eyebrow">INITIAL SETUP</div><h1>Create Admin Account</h1></div></div>
+<p class="sub">Enter the one-time setup token and configure admin credentials.</p>
 <form id="setup-form">
-<label for="setup-token">One-time VPS setup token</label><input id="setup-token" type="password" autocomplete="off" required placeholder="From installer terminal">
-<label for="setup-user">New admin username</label><input id="setup-user" value="admin" autocomplete="username" minlength="3" maxlength="64" required>
-<label for="setup-password">New admin password</label><input id="setup-password" type="password" value="Pass@123" autocomplete="new-password" minlength="12" required>
-<p class="sub tight">Starter example: admin / Pass@123. Change the password—this default is rejected.</p>
-<label for="setup-confirm">Confirm new password</label><input id="setup-confirm" type="password" autocomplete="new-password" required>
-<button id="setup-button" type="submit" class="primary">Save secure admin account</button></form>
+<label for="setup-token">Setup token</label><input id="setup-token" type="password" autocomplete="off" required placeholder="Installer setup token">
+<label for="setup-user">Username</label><input id="setup-user" value="admin" autocomplete="username" minlength="3" maxlength="64" required>
+<label for="setup-password">Password</label><input id="setup-password" type="password" placeholder="Choose a strong 12+ character password" autocomplete="new-password" minlength="12" required>
+<label for="setup-confirm">Confirm password</label><input id="setup-confirm" type="password" autocomplete="new-password" required>
+<button id="setup-button" type="submit" class="primary">Initialize Admin</button></form>
 <p id="setup-message" role="alert" aria-live="polite" class="feedback"></p>
 </section><section id="login-view" hidden class="login-card">
-<div class="eyebrow">SECURE ACCESS</div><h1>Control panel login</h1><p class="sub">Sign in to inspect your private MCP server. Operations are restricted by policy and require separate approval.</p>
+<div class="auth-brand"><img class="auth-logo" src="/assets/logo.png" alt="VPS/MCP logo"><div><div class="eyebrow">ADMIN CONSOLE</div><h1>Sign in</h1></div></div>
 <form id="login-form"><label for="username">Username</label><input id="username" autocomplete="username" maxlength="64" minlength="3" required placeholder="admin">
 <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required placeholder="Enter password">
-<button class="primary" type="submit" id="login-button">Verify & sign in</button></form>
-<p class="feedback" id="login-message" role="alert" aria-live="polite"></p><div class="footnote">Encrypted HTTPS is required for remote access · Protected admin session</div></section>
+<button class="primary" type="submit" id="login-button">Sign in</button></form>
+<p class="feedback" id="login-message" role="alert" aria-live="polite"></p></section>
 <section id="dashboard" hidden>
 
 <div class="workspace-layout">
 <aside class="workspace-sidebar" aria-label="Control navigation">
- <div class="side-heading"><span class="side-mark">V</span><div><strong>VPS / MCP</strong><small>Control Console</small></div></div>
- <div class="sidebar-group-label">WORKSPACE</div>
+ <div class="side-heading"><img class="side-logo" src="/assets/logo.png" alt="VPS/MCP logo"><div><strong>VPS / MCP</strong><small>Admin Console</small></div></div>
+ <div class="sidebar-group-label">NAVIGATION</div>
  <nav class="sidebar-menu" aria-label="Dashboard pages">
-<button id="nav-overview" type="button" class="side-link" aria-controls="page-overview" aria-current="page"><span class="side-icon" aria-hidden="true">⌂</span><span class="side-copy"><strong>Overview</strong><small>System health</small></span></button>
-<button id="nav-tools" type="button" class="side-link" aria-controls="page-tools" aria-current="false"><span class="side-icon" aria-hidden="true">▦</span><span class="side-copy"><strong>Tool access</strong><small>Global permissions</small></span></button>
-<button id="nav-operations" type="button" class="side-link" aria-controls="page-operations" aria-current="false"><span class="side-icon" aria-hidden="true">◈</span><span class="side-copy"><strong>Operations</strong><small>Write controls</small></span></button>
-<button id="nav-clients" type="button" class="side-link" aria-controls="page-clients" aria-current="false"><span class="side-icon" aria-hidden="true">♧</span><span class="side-copy"><strong>Clients</strong><small>OAuth connections</small></span></button>
-<button id="nav-approvals" type="button" class="side-link" aria-controls="page-approvals" aria-current="false"><span class="side-icon" aria-hidden="true">✓</span><span class="side-copy"><strong>Approvals</strong><small>Pending requests</small></span></button>
-<button id="nav-network" type="button" class="side-link" aria-controls="page-network" aria-current="false"><span class="side-icon" aria-hidden="true">◎</span><span class="side-copy"><strong>Domain & SSL</strong><small>Network setup</small></span></button>
-<button id="nav-security" type="button" class="side-link" aria-controls="page-security" aria-current="false"><span class="side-icon" aria-hidden="true">≡</span><span class="side-copy"><strong>Security audit</strong><small>Activity log</small></span></button>
+<button id="nav-overview" type="button" class="side-link" aria-controls="page-overview" aria-current="page"><span class="side-icon" aria-hidden="true">⌂</span><span class="side-copy"><strong>Overview</strong></span></button>
+<button id="nav-tools" type="button" class="side-link" aria-controls="page-tools" aria-current="false"><span class="side-icon" aria-hidden="true">▦</span><span class="side-copy"><strong>Tool access</strong></span></button>
+<button id="nav-operations" type="button" class="side-link" aria-controls="page-operations" aria-current="false"><span class="side-icon" aria-hidden="true">◈</span><span class="side-copy"><strong>Operations</strong></span></button>
+<button id="nav-clients" type="button" class="side-link" aria-controls="page-clients" aria-current="false"><span class="side-icon" aria-hidden="true">♧</span><span class="side-copy"><strong>Clients</strong></span></button>
+<button id="nav-approvals" type="button" class="side-link" aria-controls="page-approvals" aria-current="false"><span class="side-icon" aria-hidden="true">✓</span><span class="side-copy"><strong>Approvals</strong></span></button>
+<button id="nav-network" type="button" class="side-link" aria-controls="page-network" aria-current="false"><span class="side-icon" aria-hidden="true">◎</span><span class="side-copy"><strong>Domain & SSL</strong></span></button>
+<button id="nav-security" type="button" class="side-link" aria-controls="page-security" aria-current="false"><span class="side-icon" aria-hidden="true">≡</span><span class="side-copy"><strong>Security audit</strong></span></button>
  </nav>
- <div class="sidebar-bottom"><div class="side-security">● Private access</div><small>Permission-scoped MCP · v0.5</small></div>
+ <div class="sidebar-bottom"><div class="side-security">● Active</div><small>VPS-MCP v0.5</small></div>
 </aside>
 <div class="workspace-main">
-<div class="mobile-section-label">Control panel <span id="current-section">Overview</span></div>
+<div class="mobile-section-label">Section <span id="current-section">Overview</span></div>
 <section class="workspace-page" id="page-overview" aria-label="overview page">
-<div class="heading" id="overview"><div><div class="eyebrow">SERVER OVERVIEW</div><h1>Control Center</h1><p class="sub">Minimal security-first MCP monitoring</p></div><button class="ghost" id="refresh" type="button" aria-label="Refresh server status">↻ Refresh</button></div>
+<div class="heading" id="overview"><div><div class="eyebrow">OVERVIEW</div><h1>System Status</h1></div><button class="ghost" id="refresh" type="button" aria-label="Refresh server status">↻ Refresh</button></div>
 <div class="grid stats"><article class="card"><div class="card-title">MCP Service</div><div class="metric" id="mcp-state" aria-live="polite">—</div><div class="endpoint-row"><code id="mcp-endpoint" class="endpoint">Checking...</code><button class="ghost copy" id="copy-endpoint" type="button" title="Copy MCP endpoint">Copy</button></div></article>
-<article class="card"><div class="card-title">Allowed MCP tools</div><div class="metric" id="tools-count">—</div><div class="card-foot">Permission allowlist</div></article>
-<article class="card"><div class="card-title">OAuth clients</div><div class="metric" id="clients-count">—</div><div class="card-foot">Authorized client registrations</div></article>
-<article class="card"><div class="card-title">Active access tokens</div><div class="metric" id="token-count">—</div><div class="card-foot">Expires / rotates automatically</div></article></div>
-<div class="grid lower"><article class="card"><div class="section-head"><h2>Access control</h2><span class="tag" id="policy-label">Read-only</span></div>
-<p class="sub tight">Stop MCP traffic without affecting the panel or login.</p><div class="switch-row"><span id="mcp-toggle-desc">MCP API</span><button class="toggle" id="mcp-toggle" type="button">Disable MCP</button></div>
-<div class="rule"></div><h3>MCP client enrollment</h3><p class="sub tight">Open registration temporarily when adding a trusted account.</p><div class="switch-row"><span id="enrollment-state">Enrollment closed</span><button class="ghost" id="enrollment-toggle" type="button">Open for 5 min</button></div><div class="rule"></div><h3>Allowed tools</h3><div id="tool-list" class="chips" aria-label="Allowed MCP tools"></div></article>
-<article class="card"><div class="section-head"><h2>System</h2><span class="tag">Live</span></div><div class="statrow"><span>CPU cores</span><strong id="cpu">—</strong></div><div class="statrow"><span>Memory</span><strong id="memory">—</strong></div><div class="statrow"><span>Uptime</span><strong id="uptime">—</strong></div><div class="statrow"><span>Access mode</span><strong id="access-mode">—</strong></div></article></div>
+<article class="card"><div class="card-title">Allowed Tools</div><div class="metric" id="tools-count">—</div><div class="card-foot">Active allowlist</div></article>
+<article class="card"><div class="card-title">OAuth Clients</div><div class="metric" id="clients-count">—</div><div class="card-foot">Registered</div></article>
+<article class="card"><div class="card-title">Access Tokens</div><div class="metric" id="token-count">—</div><div class="card-foot">Active sessions</div></article></div>
+<div class="grid lower"><article class="card"><div class="section-head"><h2>Access Control</h2><span class="tag" id="policy-label">Read-only</span></div>
+<div class="switch-row"><span id="mcp-toggle-desc">MCP API</span><button class="toggle" id="mcp-toggle" type="button">Disable MCP</button></div>
+<div class="rule"></div><div class="switch-row"><span id="enrollment-state">Enrollment closed</span><button class="ghost" id="enrollment-toggle" type="button">Open for 5 min</button></div><div class="rule"></div><h3>Allowed Tools</h3><div id="tool-list" class="chips" aria-label="Allowed MCP tools"></div></article>
+<article class="card"><div class="section-head"><h2>System Metrics</h2><span class="tag">Live</span></div><div class="statrow"><span>CPU cores</span><strong id="cpu">—</strong></div><div class="statrow"><span>Memory</span><strong id="memory">—</strong></div><div class="statrow"><span>Uptime</span><strong id="uptime">—</strong></div><div class="statrow"><span>Access mode</span><strong id="access-mode">—</strong></div></article></div>
 </section>
 <section class="workspace-page" id="page-tools" aria-label="tools page" hidden>
-<section id="permissions" class="control-section" aria-labelledby="permissions-heading"><div class="section-intro"><div><div class="eyebrow">ACCESS MANAGEMENT</div><h2 id="permissions-heading">Tool permissions</h2><p class="sub">Enable or disable individual tools. Server allowlists remain the upper limit.</p></div><span class="tag">Persistent settings</span></div><div class="card"><div id="control-permissions" class="permission-grid"><p class="sub">Loading tool access…</p></div></div></section>
+<section id="permissions" class="control-section" aria-labelledby="permissions-heading"><div class="section-intro"><div><div class="eyebrow">PERMISSIONS</div><h2 id="permissions-heading">Tool Access</h2></div><span class="tag">Persistent</span></div><div class="card"><div id="control-permissions" class="permission-grid"><p class="sub">Loading…</p></div></div></section>
 </section>
 <section class="workspace-page" id="page-operations" aria-label="operations page" hidden>
-<section id="operations" class="control-section" aria-labelledby="operations-heading"><div class="section-intro"><div><div class="eyebrow">PROTECTED OPERATIONS</div><h2 id="operations-heading">Write operations</h2><p class="sub">Requires configured broker, OAuth write scope, explicit per-operation approval.</p></div><span class="tag">Fail closed</span></div><div class="card"><div class="switch-row"><div><strong>Write access gate</strong><p id="write-gate-status" class="sub tight">Loading…</p></div><button id="write-master" class="toggle" type="button">Loading…</button></div><div class="rule"></div><div id="action-permissions" class="permission-grid"></div></div></section>
+<section id="operations" class="control-section" aria-labelledby="operations-heading"><div class="section-intro"><div><div class="eyebrow">OPERATIONS</div><h2 id="operations-heading">Write Controls</h2></div><span class="tag">Fail-closed</span></div><div class="card"><div class="switch-row"><div><strong>Write Access Gate</strong><p id="write-gate-status" class="sub tight">Loading…</p></div><button id="write-master" class="toggle" type="button">Loading…</button></div><div class="rule"></div><div id="action-permissions" class="permission-grid"></div></div></section>
 </section>
 <section class="workspace-page" id="page-clients" aria-label="clients page" hidden>
-<section id="clients" class="control-section" aria-labelledby="clients-heading"><div class="section-intro"><div><div class="eyebrow">OAUTH MANAGEMENT</div><h2 id="clients-heading">Registered clients</h2><p class="sub">Set client-specific tool access or revoke a connection and its tokens.</p></div><span id="client-total" class="tag">0 clients</span></div><div id="client-list" class="client-list card"><p class="sub">Loading clients…</p></div></section>
+<section id="clients" class="control-section" aria-labelledby="clients-heading"><div class="section-intro"><div><div class="eyebrow">OAUTH</div><h2 id="clients-heading">Registered Clients</h2></div><span id="client-total" class="tag">0 clients</span></div><div id="client-list" class="client-list card"><p class="sub">Loading…</p></div></section>
 </section>
 <section class="workspace-page" id="page-approvals" aria-label="approvals page" hidden>
-<div class="heading"><div><div class="eyebrow">REQUEST REVIEW</div><h1>Approvals</h1><p class="sub">Allow only the exact operation you recognize.</p></div></div><p id="approval-not-enabled" class="sub">Write approvals are disabled in the current server configuration.</p>
-<article class="card audit" id="approval-card" hidden><div class="section-head"><h2>Pending approvals</h2><span class="tag">Manual verification required</span></div>
-<p class="sub tight">Only approve operations you recognize. Approvals expire after 5 minutes and are single-use.</p>
+<div class="heading"><div><div class="eyebrow">APPROVALS</div><h1>Pending Requests</h1></div></div><p id="approval-not-enabled" class="sub">Write approvals are disabled.</p>
+<article class="card audit" id="approval-card" hidden><div class="section-head"><h2>Approval Queue</h2><span class="tag">Single-use</span></div>
 <div id="approval-list" class="approval-list"></div></article>
 </section>
 <section class="workspace-page" id="page-network" aria-label="network page" hidden>
 
-<div class="heading"><div><div class="eyebrow">NETWORK & HOSTING</div><h1>Domain, SSL & Ports</h1><p class="sub">Plan safely, check DNS and control the private port without exposing the VPS.</p></div></div>
+<div class="heading"><div><div class="eyebrow">NETWORK</div><h1>Domain, SSL & Ports</h1></div></div>
+<section class="card network-config-card" id="manual-domains-panel">
+<div class="section-head"><h2>Domains & Subdomains</h2><span class="tag" id="manual-domain-count">0 domains</span></div>
+<form id="manual-domain-form" class="domain-add-form">
+<div><label for="manual-domain-input">Domain or Subdomain</label><input id="manual-domain-input" type="text" placeholder="e.g. mcp.yourdomain.com or yourdomain.com" maxlength="253" autocomplete="off" required></div>
+<div class="domain-form-actions"><button type="button" class="ghost" id="manual-domain-cancel" hidden>Cancel</button><button type="submit" class="primary" id="manual-domain-submit">Add domain</button></div>
+</form>
+<div class="table-scroller" tabindex="0" role="region" aria-label="Managed domains"><table>
+<thead><tr><th>Domain</th><th>Type</th><th>DNS Status</th><th>SSL Status</th><th>Actions</th></tr></thead>
+<tbody id="manual-domain-rows"><tr><td colspan="5">No domains added yet. Add a domain or subdomain above.</td></tr></tbody>
+</table></div>
+<p class="feedback" id="manual-domain-feedback" role="status" aria-live="polite"></p>
+</section>
+
+<div id="dns-config-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="dns-modal-title" hidden>
+<div class="modal-card">
+<div class="section-head"><h2 id="dns-modal-title">Configure DNS Records</h2><button type="button" class="ghost small" id="dns-modal-close" aria-label="Close DNS modal">✕ Close</button></div>
+<p class="sub tight">Add these records at your DNS provider for <strong id="dns-modal-domain">—</strong>, then click <strong>Check DNS</strong> to verify DNS &amp; connect SSL.</p>
+<div class="table-scroller" tabindex="0" role="region" aria-label="Required DNS records"><table>
+<thead><tr><th>Type</th><th>Name / Host</th><th>Value / Target</th><th>TTL</th><th>Copy</th></tr></thead>
+<tbody id="dns-modal-rows"></tbody>
+</table></div>
+<div class="modal-footer">
+<span id="dns-modal-status" class="sub" aria-live="polite"></span>
+<div class="row"><button type="button" class="primary small" id="dns-modal-check">Check DNS &amp; Verify SSL</button></div>
+</div>
+</div>
+</div>
+
 <div class="grid lower">
 <article class="card">
-<div class="section-head"><h2>Current configuration</h2><span class="tag">Active runtime</span></div>
+<div class="section-head"><h2>Runtime Config</h2><span class="tag">Active</span></div>
 <div class="statrow"><span>Host binding</span><strong id="network-bind">—</strong></div>
 <div class="statrow"><span>Host port</span><strong id="network-active-port">—</strong></div>
-<div class="statrow"><span>Internal app port</span><strong id="network-internal-port">—</strong></div>
+<div class="statrow"><span>Internal port</span><strong id="network-internal-port">—</strong></div>
 <div class="statrow"><span>Origin</span><code class="network-code" id="network-origin">—</code></div>
 <div class="statrow"><span>TLS status</span><strong id="network-ssl-status">—</strong></div>
-<p class="sub tight">Private Docker installation uses SSH forwarding. SSL certificates are not issued by this panel.</p>
 </article>
 <article class="card">
-<div class="section-head"><h2>DNS diagnostics</h2><span class="tag">Read-only check</span></div>
-<p class="sub tight">Test the domain saved in the draft. A resolved DNS record does not prove HTTPS availability or domain ownership.</p>
-<div class="network-result"><span>DNS</span><strong id="network-dns-result" aria-live="polite">Not checked</strong></div>
+<div class="section-head"><h2>DNS Lookup</h2><span class="tag">Read-only</span></div>
+<div class="network-result"><span>Resolution</span><strong id="network-dns-result" aria-live="polite">Not checked</strong></div>
 <button class="ghost compact-action" id="network-check-dns" type="button">Check DNS records</button>
 </article>
 </div>
 <section class="card network-config-card" id="cloudflare-manager">
-<div class="section-head"><h2>Manage real DNS records</h2><span class="tag">Cloudflare API</span></div>
-<p class="sub tight">Connect one Cloudflare DNS zone with a zone-scoped API token. Record changes here update your actual Cloudflare DNS. Domain registration and SSL certificates are managed separately.</p>
-<div class="network-result"><span>Cloudflare connection</span><strong id="dns-provider-status" aria-live="polite">Not connected</strong></div>
+<div class="section-head"><h2>Cloudflare DNS</h2><span class="tag">API</span></div>
+<div class="network-result"><span>Status</span><strong id="dns-provider-status" aria-live="polite">Not connected</strong></div>
 <form id="dns-connect-form" class="network-form">
-<div><label for="dns-zone-id">Cloudflare Zone ID</label><input id="dns-zone-id" type="text" minlength="32" maxlength="32" pattern="[0-9A-Fa-f]{32}" placeholder="32-character Zone ID" autocomplete="off" required><small class="field-help">Find this in Cloudflare → your domain → Overview.</small></div>
-<div><label for="dns-token">Zone-scoped API token</label><input id="dns-token" type="password" maxlength="256" autocomplete="off" spellcheck="false" placeholder="Token with Zone Read and DNS Edit" required><small class="field-help">Only the selected zone. Never use a Global API Key.</small></div>
-<div class="network-form-actions"><button id="dns-connect" type="submit" class="primary">Connect Cloudflare</button></div>
+<div><label for="dns-zone-id">Zone ID</label><input id="dns-zone-id" type="text" minlength="32" maxlength="32" pattern="[0-9A-Fa-f]{32}" placeholder="32-char Zone ID" autocomplete="off" required></div>
+<div><label for="dns-token">API Token</label><input id="dns-token" type="password" maxlength="256" autocomplete="off" spellcheck="false" placeholder="Zone Read + DNS Edit token" required></div>
+<div class="network-form-actions"><button id="dns-connect" type="submit" class="primary">Connect</button></div>
 </form>
 <div id="dns-connected-actions" hidden>
-<div class="network-result"><span>Managed zone</span><strong id="dns-zone">—</strong></div>
-<div class="row"><button id="dns-refresh" class="ghost" type="button">Load DNS records</button><button id="dns-disconnect" class="ghost danger" type="button">Disconnect token</button></div>
+<div class="network-result"><span>Zone</span><strong id="dns-zone">—</strong></div>
+<div class="row"><button id="dns-refresh" class="ghost" type="button">Load records</button><button id="dns-disconnect" class="ghost danger" type="button">Disconnect</button></div>
 </div>
 <p id="dns-feedback" class="feedback" role="status" aria-live="polite"></p>
 </section>
 <section class="card network-config-card" id="dns-records-panel" hidden>
-<div class="section-head"><h2>DNS records</h2><span class="tag">Live Cloudflare data</span></div>
-<p class="sub tight">Supported changes: A, AAAA, CNAME, TXT and MX. NS, SOA and other provider-managed records are shown but are not editable here. DNS updates can interrupt websites or email: verify the values first.</p>
+<div class="section-head"><h2>DNS Records</h2><span class="tag">Live</span></div>
 <div class="table-scroller" tabindex="0" role="region" aria-label="Cloudflare DNS records"><table>
 <thead><tr><th>Type</th><th>Name</th><th>Content</th><th>TTL</th><th>Actions</th></tr></thead>
-<tbody id="dns-record-rows"><tr><td colspan="5">Select Load DNS records.</td></tr></tbody>
+<tbody id="dns-record-rows"><tr><td colspan="5">Select Load records.</td></tr></tbody>
 </table></div>
 <form id="dns-record-form" class="network-form dns-record-form">
-<div><label for="dns-type">Record type</label><select id="dns-type"><option>A</option><option>AAAA</option><option>CNAME</option><option>TXT</option><option>MX</option></select></div>
-<div><label for="dns-name">Name</label><input id="dns-name" placeholder="@ or www" maxlength="253" required><small class="field-help">@ = root domain</small></div>
-<div><label for="dns-content">Value / target</label><input id="dns-content" maxlength="2048" placeholder="IP, hostname or text" required></div>
+<div><label for="dns-type">Type</label><select id="dns-type"><option>A</option><option>AAAA</option><option>CNAME</option><option>TXT</option><option>MX</option></select></div>
+<div><label for="dns-name">Name</label><input id="dns-name" placeholder="@ or www" maxlength="253" required></div>
+<div><label for="dns-content">Content</label><input id="dns-content" maxlength="2048" placeholder="IP, hostname or text" required></div>
 <div><label for="dns-ttl">TTL</label><select id="dns-ttl"><option value="1">Automatic</option><option value="60">1 min</option><option value="300">5 min</option><option value="3600">1 hour</option><option value="86400">1 day</option></select></div>
-<div id="dns-mx-wrap" hidden><label for="dns-priority">MX priority</label><input id="dns-priority" type="number" min="0" max="65535" value="10"></div>
-<div><label for="dns-proxied">Cloudflare proxy</label><label class="dns-checkbox"><input id="dns-proxied" type="checkbox"> Proxy eligible A/AAAA/CNAME records</label></div>
-<div class="network-form-actions"><button type="button" class="ghost" id="dns-cancel-edit" hidden>Cancel edit</button><button type="submit" class="primary" id="dns-record-save">Create record</button></div>
+<div id="dns-mx-wrap" hidden><label for="dns-priority">MX Priority</label><input id="dns-priority" type="number" min="0" max="65535" value="10"></div>
+<div><label for="dns-proxied">Proxy</label><label class="dns-checkbox"><input id="dns-proxied" type="checkbox"> Proxied</label></div>
+<div class="network-form-actions"><button type="button" class="ghost" id="dns-cancel-edit" hidden>Cancel</button><button type="submit" class="primary" id="dns-record-save">Save record</button></div>
 </form>
 <p id="dns-record-feedback" class="feedback" role="status" aria-live="polite"></p>
 </section>
 <section class="card network-config-card">
-<div class="section-head"><h2>Network configuration plan</h2><span class="tag">Draft, not deployed</span></div>
-<p class="sub tight">Saving a plan never restarts Docker or changes public DNS/SSL. Only a trusted host administrator can apply a private port.</p>
+<div class="section-head"><h2>Network Plan</h2><span class="tag">Draft</span></div>
 <form id="network-form" class="network-form">
-<div><label for="network-domain">Domain / subdomain</label><input id="network-domain" type="text" placeholder="mcp.example.com" maxlength="253" autocomplete="off"><small class="field-help">Domain name only, no https:// or paths.</small></div>
-<div><label for="network-port">Private host port</label><input id="network-port" type="number" min="1024" max="65535" step="1" value="3000" required><small class="field-help">Keep PC SSH source port 3000; set the VPS forwarding destination to this port after apply.</small></div>
-<div><label for="network-mode">SSL / access plan</label><select id="network-mode"><option value="private-only">Private SSH only (current)</option><option value="external-https">Plan external HTTPS gateway</option></select><small class="field-help">External gateway/cert must be configured and verified separately.</small></div>
-<div class="network-form-actions"><button id="network-save" class="primary" type="submit">Save network plan</button></div>
+<div><label for="network-domain">Domain</label><input id="network-domain" type="text" placeholder="mcp.example.com" maxlength="253" autocomplete="off"></div>
+<div><label for="network-port">Host Port</label><input id="network-port" type="number" min="1024" max="65535" step="1" value="3000" required></div>
+<div><label for="network-mode">Access Mode</label><select id="network-mode"><option value="private-only">Private SSH only</option><option value="external-https">External HTTPS gateway</option></select></div>
+<div class="network-form-actions"><button id="network-save" class="primary" type="submit">Save plan</button></div>
 </form>
-<p id="network-saved" class="sub" aria-live="polite">No changes applied</p>
+<p id="network-saved" class="sub tight" aria-live="polite">No changes applied</p>
 </section>
 <section class="card network-config-card">
-<div class="section-head"><h2>Safe apply & TLS checklist</h2><span class="tag">Operator approval</span></div>
-<p class="sub tight">For a validated <strong>private host port</strong>, sign in to the VPS through SSH and run:</p>
+<div class="section-head"><h2>Apply Port Command</h2><span class="tag">SSH</span></div>
 <div class="network-command"><code id="network-apply-command">sudo bash scripts/apply-network.sh</code><button id="network-copy-command" class="ghost copy" type="button">Copy</button></div>
-<p class="sub tight">The script changes only the localhost Docker host-port, checks /health and rolls back on failure. It does <strong>not</strong> issue SSL, change DNS, expose the dashboard or adjust firewalls.</p>
-<div class="network-checklist"><div>① Point DNS to a gateway you control</div><div>② Provision a trusted HTTPS certificate and renewal</div><div>③ Isolate and verify the OAuth login callback</div><div>④ Validate the MCP endpoint externally before connecting AI</div></div>
 <p class="feedback" id="network-feedback" role="status" aria-live="polite"></p>
 </section>
 
 </section>
 <section class="workspace-page" id="page-security" aria-label="security page" hidden>
-<div class="heading"><div><div class="eyebrow">ACTIVITY & SECURITY</div><h1>Audit log</h1><p class="sub">Recent events and authorization decisions.</p></div></div>
-<article class="card audit" id="audit-history"><div class="section-head"><h2>Recent security audit</h2><span class="tag">Latest 20</span></div><div class="audit-toolbar"><label class="sr-only" for="audit-search">Filter security audit events</label><input id="audit-search" type="search" placeholder="Filter recent audit events" autocomplete="off" maxlength="80"></div><div class="table-scroller" tabindex="0" role="region" aria-label="Security audit table"><table><caption class="sr-only">Latest security events</caption><thead><tr><th>Time</th><th>Action</th><th>Result</th><th>Actor</th></tr></thead><tbody id="audit-rows"><tr><td colspan="4">Loading...</td></tr></tbody></table></div></article>
+<div class="heading"><div><div class="eyebrow">SECURITY</div><h1>Audit Log</h1></div></div>
+<article class="card audit" id="audit-history"><div class="section-head"><h2>Recent Events</h2><span class="tag">Latest 20</span></div><div class="audit-toolbar"><label class="sr-only" for="audit-search">Filter security audit events</label><input id="audit-search" type="search" placeholder="Filter events…" autocomplete="off" maxlength="80"></div><div class="table-scroller" tabindex="0" role="region" aria-label="Security audit table"><table><caption class="sr-only">Latest security events</caption><thead><tr><th>Time</th><th>Action</th><th>Result</th><th>Actor</th></tr></thead><tbody id="audit-rows"><tr><td colspan="4">Loading...</td></tr></tbody></table></div></article>
 </section>
 <p class="feedback" id="notice" role="status" aria-live="polite"></p>
 </div></div>
 </section></main>
-<footer>VPS-MCP <span>·</span> Access Console <span>·</span> Secure management</footer></div>
+<footer>VPS-MCP <span>·</span> Admin Console</footer></div>
 <script src="/assets/panel.js" defer></script></body></html>

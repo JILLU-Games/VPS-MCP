@@ -258,3 +258,32 @@ test('advanced dashboard controls enforce CSRF, global and per-client permission
     assert.equal(response.status,401);
   } finally {await app.shutdown();}
 });
+
+test('production deployment compose.yaml and scripts/install.sh configure the isolated Unix socket broker (BUG-08)',async()=>{
+  const composeRaw=await readFile(path.resolve('compose.yaml'),'utf8');
+  assert.match(composeRaw,/broker:/);
+  assert.match(composeRaw,/dist\/broker\/main\.js/);
+  assert.match(composeRaw,/mcp-socket:\/run\/vps-mcp/);
+
+  const installRaw=await readFile(path.resolve('scripts/install.sh'),'utf8');
+  assert.match(installRaw,/MCP_BROKER_SOCKET=\/run\/vps-mcp\/broker\.sock/);
+  assert.match(installRaw,/MCP_BROKER_SECRET=\$broker_secret/);
+
+  // Verify loadConfig accepts broker-backed tools and write gate when provisioned with the installer's broker vars
+  const cfg=loadConfig({
+    MCP_HOST:'0.0.0.0',
+    MCP_PRIVATE_CONTAINER:'true',
+    MCP_PUBLIC_URL:'http://127.0.0.1:3000',
+    MCP_SETUP_TOKEN_HASH:'a'.repeat(64),
+    MCP_BROKER_SOCKET:'/run/vps-mcp/broker.sock',
+    MCP_BROKER_SECRET:'b'.repeat(64),
+    MCP_WRITE_ROOT:'/data/workspace',
+    MCP_ALLOWED_TOOLS:'system_status,disk_usage,operation_request,operation_execute',
+    MCP_ENABLE_WRITES:'true'
+  });
+  assert.equal(cfg.MCP_BROKER_SOCKET,'/run/vps-mcp/broker.sock');
+  assert.equal(cfg.writesEnabled,true);
+  assert.equal(cfg.allowedTools.includes('operation_request'),true);
+  assert.equal(cfg.allowedTools.includes('operation_execute'),true);
+});
+
